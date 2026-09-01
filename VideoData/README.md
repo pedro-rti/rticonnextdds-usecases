@@ -87,6 +87,19 @@ gst-launch-1.0 connextsrc domain=0 topic=Video key=cam1 dp-qos-profile="Transpor
 
 Similarly, this command subscribes using the `connextsrc` plugin to the Connext databus with the provided domain, topic, key and QoS. The pipeline parses the H.264 encoding and displays it with the GStreamer `fpsdisplaysink`. There may be some latency depending on the capabilities of your hardware to perform video encoding. The plugin also supports `x-raw`
 
+### Subscriber queue behavior
+
+`connextsrc` has a post-DDS queue whose behavior is independent of DDS history
+and reliability. Its `queue-mode` property supports `unbounded` (the
+backward-compatible default), `drop-oldest`, and `blocking`. Bounded modes use
+`max-queued-frames`, which defaults to `1`.
+
+For low-latency display or inference, use
+`queue-mode=drop-oldest max-queued-frames=1`. For bounded complete playback or
+recording, use `queue-mode=blocking` with a capacity sized for the workload.
+See [connextsrc post-DDS queue behavior](docs/connextsrc-queue-behavior.md) for
+tradeoffs, ownership details, diagnostics, and examples.
+
 With GStreamer, you can customize every aspect of the pipeline you build, allowing for different forms of encoding, as well as adjustments to the resolution and framerate. This allows you to make further performance optimizations depending on your hardware, network environment and available bandwidth. Some of the ways you can do this are described below:
 
 ## Other Useful Tools

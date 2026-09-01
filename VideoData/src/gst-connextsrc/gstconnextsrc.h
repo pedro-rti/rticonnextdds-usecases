@@ -31,6 +31,13 @@ typedef struct GstConnextSrc_Context GstConnextSrc_Context;
 typedef struct GstConnextSrc GstConnextSrc;
 typedef struct GstConnextSrcClass GstConnextSrcClass;
 
+typedef enum
+{
+	GST_CONNEXTSRC_QUEUE_UNBOUNDED,
+	GST_CONNEXTSRC_QUEUE_DROP_OLDEST,
+	GST_CONNEXTSRC_QUEUE_BLOCKING
+} GstConnextSrcQueueMode;
+
 /* Contains the Connext DDS entities used to receive the data fed into the GStreamer pipeline */
 struct GstConnextSrc_Context
 {
@@ -48,7 +55,8 @@ struct GstConnextSrc_Context
 	gchar* prevKey;									
 	DDS_ContentFilteredTopic* cft;					
 	struct DDS_StringSeq cft_parameters;			
-	GstBuffer* frame_buffer;						
+	gboolean owns_participant;
+	gboolean cft_parameters_initialized;
 };
 
 struct GstConnextSrc
@@ -57,6 +65,18 @@ struct GstConnextSrc
 	GstConnextSrc_Context connext;
 	/* Queue in which Connext frames are placed in the on_data_available callback */
 	GAsyncQueue* g_filled_frame_queue;
+	GMutex queue_mutex;
+	GCond queue_cond;
+	GstConnextSrcQueueMode queue_mode;
+	guint max_queued_frames;
+	guint queue_depth;
+	guint max_observed_queue_depth;
+	guint64 samples_received;
+	guint64 buffers_delivered;
+	guint64 buffers_dropped;
+	gboolean queue_running;
+	gboolean queue_flushing;
+	GstClockTime receiver_timestamp_origin;
 };
 
 struct GstConnextSrcClass
